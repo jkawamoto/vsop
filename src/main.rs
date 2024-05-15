@@ -13,6 +13,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use ct2rs::{TranslationOptions, Translator};
 use directories::ProjectDirs;
+use spinners::{Spinner, Spinners};
 use tempfile::NamedTempFile;
 
 const APP_NAME: &str = "vsop";
@@ -58,7 +59,9 @@ fn main() -> Result<()> {
         }
     }
 
+    let mut sp = Spinner::new(Spinners::Dots, "Translating...".to_string());
     let res = t.translate_batch(&prompts, &opts, None)?;
+    sp.stop_with_newline();
     for (r, _) in res {
         println!("{}", r.replace("。", "。\n"));
     }

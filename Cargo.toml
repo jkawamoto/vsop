@@ -9,3 +9,4 @@ ct2rs = { version = "0.8.0", features = ["accelerate"] }
 tempfile = "3.10.1"
 clap = { version = "4.5.4", features = ["derive"] }
 directories = "5.0.1"
+spinners = "4.1.1"
