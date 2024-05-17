@@ -1,0 +1,16 @@
+syntax = "proto3";
+package translator;
+
+message Request {
+  repeated string source = 1;
+}
+
+message Response{
+  repeated string result = 1;
+}
+
+service Translator {
+  rpc translate(Request) returns (Response){
+
+  }
+}
