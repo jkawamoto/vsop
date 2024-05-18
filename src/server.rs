@@ -6,17 +6,28 @@
 //
 // http://opensource.org/licenses/mit-license.php
 
+use std::fmt::Debug;
+use std::path::Path;
+
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use ct2rs::auto::Tokenizer as AutoTokenizer;
 use ct2rs::TranslationOptions;
 use directories::ProjectDirs;
-use std::fmt::Debug;
-use std::path::Path;
+use tokio::net::UnixListener;
+use tokio::signal;
+use tokio::sync::oneshot;
+use tokio_stream::wrappers::UnixListenerStream;
 use tonic::{transport::Server, Request, Response, Status};
+
 use translator::{
     translator_server, Request as TranslationRequest, Response as TranslationResponse,
 };
+
+use crate::socket::SocketFile;
+
+#[allow(dead_code)]
+mod socket;
 
 mod translator {
     tonic::include_proto!("translator");
@@ -33,7 +44,7 @@ impl Translator {
             inner: ct2rs::Translator::new(model_path, &Default::default())?,
             options: TranslationOptions {
                 beam_size: 12,
-                max_input_length: 0,
+                use_vmap: true,
                 ..Default::default()
             },
         })
@@ -69,17 +80,31 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = crate::Args::parse();
-    let dirs = ProjectDirs::from("", "", crate::APP_NAME)
+    let dirs = ProjectDirs::from("", "", APP_NAME)
         .ok_or_else(|| anyhow!("failed to find home directory"))?;
 
-    let model_path = dirs.cache_dir().join(args.model);
-    let addr = "[::1]:50051".parse()?;
+    let model_dir = dirs.cache_dir().join(args.model);
+    let socket_file = SocketFile::new(APP_NAME)?;
+
+    let (tx, rx) = oneshot::channel::<()>();
+    tokio::spawn(async move {
+        if signal::ctrl_c().await.is_ok() {
+            tx.send(()).ok();
+        }
+    });
 
     Server::builder()
         .add_service(translator_server::TranslatorServer::new(Translator::new(
-            model_path,
+            model_dir,
         )?))
-        .serve(addr)
+        .serve_with_incoming_shutdown(
+            UnixListenerStream::new(UnixListener::bind(&socket_file)?),
+            async move {
+                if let Err(e) = rx.await {
+                    println!("failed to receive a signal: {e}");
+                }
+            },
+        )
         .await?;
 
     Ok(())
