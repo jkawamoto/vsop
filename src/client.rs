@@ -7,7 +7,8 @@
 // http://opensource.org/licenses/mit-license.php
 
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read, stdin};
+use std::io::{stdin, BufRead, BufReader, Read};
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::Result;
@@ -15,12 +16,12 @@ use clap::{crate_name, Parser};
 use spinners::{Spinner, Spinners};
 use tempfile::NamedTempFile;
 use tokio::net::UnixStream;
-use tonic::Request;
 use tonic::transport::{Endpoint, Uri};
+use tonic::Request;
 use tower::service_fn;
 
-use translator::Request as TranslationRequest;
 use translator::translator_client::TranslatorClient;
+use translator::Request as TranslationRequest;
 
 use crate::socket::socket_filename;
 
@@ -42,6 +43,9 @@ struct Args {
     /// Read source text from standard input (stdin).
     #[arg(short, long)]
     stdin: bool,
+    /// Specifies the path to the socket file.
+    #[arg(long)]
+    socket_file: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -59,7 +63,10 @@ async fn main() -> Result<()> {
     };
     let prompts = prepare_prompts(BufReader::new(r))?;
 
-    let socket_file = socket_filename(APP_NAME)?;
+    let socket_file = match args.socket_file {
+        Some(socket_file) => socket_file,
+        None => socket_filename(crate_name!())?,
+    };
     let channel = Endpoint::try_from("http://[::]:50051")?
         .connect_with_connector(service_fn(move |_: Uri| {
             // Connect to a Uds socket
@@ -80,7 +87,7 @@ async fn main() -> Result<()> {
 }
 
 fn prepare_prompts<R: BufRead>(r: R) -> Result<Vec<String>> {
-    fn split_line(line:String)->Vec<String>{
+    fn split_line(line: String) -> Vec<String> {
         line.split_inclusive(".")
             .map(|s| String::from(s.trim()))
             .collect::<Vec<String>>()
@@ -93,7 +100,7 @@ fn prepare_prompts<R: BufRead>(r: R) -> Result<Vec<String>> {
         if line.ends_with(".") {
             res.append(&mut split_line(line));
             line = String::new();
-        }else if line.is_empty(){
+        } else if line.is_empty() {
             res.push(String::new());
         } else {
             line.push_str(" ")
@@ -135,7 +142,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first line.\nAnd this is the second line."
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first line.".to_string(),
                 "And this is the second line.".to_string(),
@@ -145,7 +152,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first line. And\nthis is the second line."
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first line.".to_string(),
                 "And this is the second line.".to_string(),
@@ -155,7 +162,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first line. And the second line misses the period"
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first line.".to_string(),
                 "And the second line misses the period".to_string(),
@@ -165,7 +172,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first line.\nAnd the second line misses the period"
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first line.".to_string(),
                 "And the second line misses the period".to_string(),
@@ -175,7 +182,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first line. And\nthe second line misses the period"
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first line.".to_string(),
                 "And the second line misses the period".to_string(),
@@ -185,7 +192,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first paragraph.\n\nThis is the second paragraph."
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first paragraph.".to_string(),
                 "".to_string(),
@@ -196,7 +203,7 @@ mod tests {
             prepare_prompts(Cursor::new(
                 "This is the first\nparagraph.\n\nThis is the second paragraph."
             ))
-                .unwrap(),
+            .unwrap(),
             vec![
                 "This is the first paragraph.".to_string(),
                 "".to_string(),

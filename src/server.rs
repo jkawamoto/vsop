@@ -78,21 +78,22 @@ struct Args {
     /// Loads the model from the specified directory.
     #[arg(long, value_name = "DIR")]
     model_dir: Option<PathBuf>,
+    /// Specifies the path to the socket file.
+    #[arg(long)]
+    socket_file: Option<PathBuf>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let model_dir = if let Some(model_dir) = args.model_dir {
-        model_dir
-    } else {
-        ProjectDirs::from("", "", APP_NAME)
+    let model_dir = match args.model_dir {
+        Some(model_dir) => model_dir,
+        None => ProjectDirs::from("", "", APP_NAME)
             .ok_or_else(|| anyhow!("failed to find home directory"))?
             .cache_dir()
-            .join(args.model)
+            .join(args.model),
     };
-
 
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
@@ -101,7 +102,10 @@ async fn main() -> Result<()> {
         }
     });
 
-    let socket_file = SocketFile::new(APP_NAME)?;
+    let socket_file = match args.socket_file {
+        Some(path) => SocketFile::with_path(path)?,
+        None => SocketFile::new(APP_NAME)?,
+    };
     Server::builder()
         .add_service(translator_server::TranslatorServer::new(Translator::new(
             model_dir,
