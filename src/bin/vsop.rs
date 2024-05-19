@@ -1,4 +1,4 @@
-// client.rs
+// vsop.rs
 //
 // Copyright (c) 2024 Junpei Kawamoto
 //
@@ -15,24 +15,9 @@ use anyhow::Result;
 use clap::{crate_name, Parser};
 use spinners::{Spinner, Spinners};
 use tempfile::NamedTempFile;
-use tokio::net::UnixStream;
-use tonic::transport::{Endpoint, Uri};
-use tonic::Request;
-use tower::service_fn;
 
-use translator::translator_client::TranslatorClient;
-use translator::Request as TranslationRequest;
-
-use crate::socket::socket_filename;
-
-#[allow(dead_code)]
-mod socket;
-
-const APP_NAME: &str = crate_name!();
-
-pub mod translator {
-    tonic::include_proto!("translator");
-}
+use vsop::socket::socket_filename;
+use vsop::Client;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -67,19 +52,13 @@ async fn main() -> Result<()> {
         Some(socket_file) => socket_file,
         None => socket_filename(crate_name!())?,
     };
-    let channel = Endpoint::try_from("http://[::]:50051")?
-        .connect_with_connector(service_fn(move |_: Uri| {
-            // Connect to a Uds socket
-            UnixStream::connect(socket_file.clone())
-        }))
-        .await?;
 
-    let mut client = TranslatorClient::new(channel);
-    let req = Request::new(TranslationRequest { source: prompts });
+    let mut client = Client::new(socket_file).await?;
+
     let mut sp = Spinner::new(Spinners::Dots, "Translating...".to_string());
-    let res = client.translate(req).await?;
+    let res = client.translate(prompts).await?;
     sp.stop_with_newline();
-    for r in res.get_ref().result.iter() {
+    for r in res.iter() {
         println!("{}", r.trim());
     }
 

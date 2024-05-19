@@ -3,14 +3,6 @@ name = "vsop"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "server"
-path = "src/server.rs"
-
-[[bin]]
-name = "client"
-path = "src/client.rs"
-
 [dependencies]
 anyhow = "1.0.85"
 ct2rs = { path = "../ctranslate2-rs", features = ["accelerate"] }
@@ -19,9 +11,9 @@ clap = { version = "4.5.4", features = ["derive", "cargo"] }
 directories = "5.0.1"
 spinners = "4.1.1"
 tonic = "0.11.0"
-tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread","net", "signal"] }
+tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "net", "signal"] }
 prost = "0.12.6"
-tokio-stream = {  version = "0.1.15" , features = ["net"]}
+tokio-stream = { version = "0.1.15", features = ["net"] }
 tower = "0.4.13"
 
 [build-dependencies]
