@@ -7,10 +7,10 @@
 // http://opensource.org/licenses/mit-license.php
 
 use std::fmt::Debug;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
-use clap::Parser;
+use clap::{crate_name, Parser};
 use ct2rs::auto::Tokenizer as AutoTokenizer;
 use ct2rs::TranslationOptions;
 use directories::ProjectDirs;
@@ -28,6 +28,8 @@ use crate::socket::SocketFile;
 
 #[allow(dead_code)]
 mod socket;
+
+const APP_NAME: &str = crate_name!();
 
 mod translator {
     tonic::include_proto!("translator");
@@ -67,24 +69,30 @@ impl translator_server::Translator for Translator {
     }
 }
 
-const APP_NAME: &str = "vsop";
-
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Name of the model to be used.
+    /// Specifies the name of the model to be used.
     #[arg(short, long, value_name = "NAME", default_value = "fugumt-en-ja")]
     model: String,
+    /// Loads the model from the specified directory.
+    #[arg(long, value_name = "DIR")]
+    model_dir: Option<PathBuf>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = crate::Args::parse();
-    let dirs = ProjectDirs::from("", "", APP_NAME)
-        .ok_or_else(|| anyhow!("failed to find home directory"))?;
+    let args = Args::parse();
 
-    let model_dir = dirs.cache_dir().join(args.model);
-    let socket_file = SocketFile::new(APP_NAME)?;
+    let model_dir = if let Some(model_dir) = args.model_dir {
+        model_dir
+    } else {
+        ProjectDirs::from("", "", APP_NAME)
+            .ok_or_else(|| anyhow!("failed to find home directory"))?
+            .cache_dir()
+            .join(args.model)
+    };
+
 
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
@@ -93,6 +101,7 @@ async fn main() -> Result<()> {
         }
     });
 
+    let socket_file = SocketFile::new(APP_NAME)?;
     Server::builder()
         .add_service(translator_server::TranslatorServer::new(Translator::new(
             model_dir,
