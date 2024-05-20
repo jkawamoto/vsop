@@ -46,6 +46,9 @@ impl AsRef<Path> for SocketFile {
 
 impl Drop for SocketFile {
     fn drop(&mut self) {
+        if !self.path.exists() {
+            return;
+        }
         if let Err(e) = remove_file(&self.path) {
             println!("failed to remove socket file {}: {}", &self, e);
         }

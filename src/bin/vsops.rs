@@ -11,6 +11,8 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::{crate_name, Parser};
+use ct2rs::config::Config;
+use ct2rs::config::Device;
 use tokio::signal;
 use tokio::sync::oneshot;
 
@@ -45,6 +47,12 @@ struct Args {
     /// Specifies the path to the socket file.
     #[arg(long)]
     socket_file: Option<PathBuf>,
+    /// Enable GPU acceleration,
+    #[arg(long)]
+    cuda: bool,
+    /// Specifies the CUDA device ID to be used. Effective only when the `--cuda` flag is enabled.
+    #[arg(long, default_value = "0")]
+    cuda_device_id: i32,
 }
 
 #[tokio::main]
@@ -67,7 +75,14 @@ async fn main() -> Result<()> {
         Some(path) => SocketFile::with_path(path)?,
         None => SocketFile::new(crate_name!())?,
     };
-    let server = Server::new(model_dir)?;
+    let server = Server::new(
+        model_dir,
+        Config {
+            device: if args.cuda { Device::CUDA } else { Device::CPU },
+            device_indices: vec![args.cuda_device_id],
+            ..Default::default()
+        },
+    )?;
     server
         .serve(socket_file, async move {
             if let Err(e) = rx.await {

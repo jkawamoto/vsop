@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Error, Result};
 use ct2rs::auto::Tokenizer as AutoTokenizer;
+use ct2rs::config::Config;
 use ct2rs::{TranslationOptions, Translator};
 use tokio::net::{UnixListener, UnixStream};
 use tokio_stream::wrappers::UnixListenerStream;
@@ -60,9 +61,9 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new<P: AsRef<Path>>(model_path: P) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(model_path: P, config: Config) -> Result<Self> {
         Ok(Self {
-            inner: Translator::new(model_path, &Default::default())?,
+            inner: Translator::new(model_path, &config)?,
             options: TranslationOptions {
                 beam_size: 12,
                 use_vmap: true,
