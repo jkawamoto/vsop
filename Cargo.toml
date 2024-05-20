@@ -1,11 +1,18 @@
 [package]
 name = "vsop"
 version = "0.1.0"
+authors = ["Junpei Kawamoto <kawamoto.junpei@gmail.com>"]
 edition = "2021"
+description = "Command line translation tool using CTranslate2"
+repository = "https://github.com/jkawamoto/vsop"
+license = "MIT"
+keywords = ["ctranslate2", "translation", "llm"]
+categories = ["command-line-utilities", "text-processing"]
+
 
 [dependencies]
-anyhow = "1.0.85"
-ct2rs = { path = "../ctranslate2-rs", features = ["accelerate"] }
+anyhow = "1.0.86"
+ct2rs =  "0.8.2"
 tempfile = "3.10.1"
 clap = { version = "4.5.4", features = ["derive", "cargo"] }
 directories = "5.0.1"
@@ -17,5 +24,16 @@ tokio-stream = { version = "0.1.15", features = ["net"] }
 tower = "0.4.13"
 hf-hub = "0.3.2"
 
+
 [build-dependencies]
 tonic-build = "0.11.0"
+
+
+[features]
+default = []
+mkl = ["ct2rs/mkl"]
+openblas = ["ct2rs/openblas"]
+ruy = ["ct2rs/ruy"]
+accelerate = ["ct2rs/accelerate"]
+cuda = ["ct2rs/cuda"]
+cudnn = ["ct2rs/cudnn"]

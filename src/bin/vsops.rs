@@ -21,8 +21,20 @@ mod translator {
     tonic::include_proto!("translator");
 }
 
+/// A translation server using CTranslate2.
+///
+/// This server creates a UNIX domain socket, listens for translation requests, and handles them
+/// accordingly.
+///
+/// By default, a socket file is created in the user’s data directory.
+/// If the `--socket-file` flag is used to specify an alternative path, the socket file will be
+/// created at that location.
+///
+/// The model specified by the `--model` flag will be downloaded from Hugging Face and loaded.
+/// If the `--model-dir` flag is used to specify a directory path, the model within that directory
+/// will be loaded instead.
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(name = "vsops", author, version, long_about)]
 struct Args {
     /// Specifies the name of the model to be used.
     #[arg(short, long, value_name = "NAME", default_value = "fugumt-en-ja")]

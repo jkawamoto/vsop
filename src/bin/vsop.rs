@@ -20,8 +20,19 @@ use tempfile::NamedTempFile;
 use vsop::socket::socket_filename;
 use vsop::Client;
 
+/// A client application for `vsops`, a translation server using CTranslate2.
+///
+/// This application opens an editor specified by the `EDITOR` environment variable
+/// and sends a translation request with the written text to the server.
+/// If a file path is provided using the `--file` flag, the text in the file will be used for the
+/// translation request. If the `--stdin` flag is given, it reads from stdin to obtain the text
+/// for translation.
+///
+/// To communicate with the server, it uses a domain socket. It attempts to connect to the socket
+/// file located in the user's data directory. However, if a different path is specified with the
+/// `--socket-file` flag, it will connect to the socket file at that specified location.
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(name = "vsop", author, version, long_about)]
 struct Args {
     /// Read source text from the specified file.
     #[arg(short = 'f', long = "file", value_name = "FILE")]
