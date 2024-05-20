@@ -6,6 +6,7 @@
 //
 // http://opensource.org/licenses/mit-license.php
 
+use std::env;
 use std::fs::File;
 use std::io::{stdin, BufRead, BufReader, Read};
 use std::path::PathBuf;
@@ -43,7 +44,10 @@ async fn main() -> Result<()> {
         Box::new(stdin())
     } else {
         let file = NamedTempFile::new()?;
-        let _ = Command::new("nano").arg(file.path()).spawn()?.wait()?;
+        let _ = Command::new(env::var("EDITOR").unwrap_or("nano".to_string()))
+            .arg(file.path())
+            .spawn()?
+            .wait()?;
         Box::new(file)
     };
     let prompts = prepare_prompts(BufReader::new(r))?;
