@@ -15,6 +15,7 @@ tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "net", "s
 prost = "0.12.6"
 tokio-stream = { version = "0.1.15", features = ["net"] }
 tower = "0.4.13"
+hf-hub = "0.3.2"
 
 [build-dependencies]
 tonic-build = "0.11.0"

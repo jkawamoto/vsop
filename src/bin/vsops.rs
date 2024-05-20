@@ -6,19 +6,16 @@
 //
 // http://opensource.org/licenses/mit-license.php
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::{crate_name, Parser};
-use directories::ProjectDirs;
 use tokio::signal;
 use tokio::sync::oneshot;
 
 use vsop::socket::SocketFile;
 use vsop::Server;
-
-const APP_NAME: &str = crate_name!();
 
 mod translator {
     tonic::include_proto!("translator");
@@ -44,10 +41,7 @@ async fn main() -> Result<()> {
 
     let model_dir = match args.model_dir {
         Some(model_dir) => model_dir,
-        None => ProjectDirs::from("", "", APP_NAME)
-            .ok_or_else(|| anyhow!("failed to find home directory"))?
-            .cache_dir()
-            .join(args.model),
+        None => find_model_dir(args.model)?,
     };
 
     let (tx, rx) = oneshot::channel::<()>();
@@ -59,7 +53,7 @@ async fn main() -> Result<()> {
 
     let socket_file = match args.socket_file {
         Some(path) => SocketFile::with_path(path)?,
-        None => SocketFile::new(APP_NAME)?,
+        None => SocketFile::new(crate_name!())?,
     };
     let server = Server::new(model_dir)?;
     server
@@ -71,4 +65,19 @@ async fn main() -> Result<()> {
         .await?;
 
     Ok(())
+}
+
+fn find_model_dir<T: Display>(model: T) -> Result<PathBuf> {
+    let api = hf_hub::api::sync::Api::new()?;
+    let repo = api.model(format!("jkawamoto/{}-ct2", model));
+
+    let mut res = None;
+    for f in repo.info()?.siblings {
+        let path = repo.get(&f.rfilename)?;
+        if res.is_none() {
+            res = path.parent().map(PathBuf::from);
+        }
+    }
+
+    res.ok_or_else(|| anyhow!("no model files are found"))
 }
