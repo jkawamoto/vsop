@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Junpei Kawamoto <kawamoto.junpei@gmail.com>"]
 edition = "2021"
 description = "Command line translation tool using CTranslate2"
+homepage = "https://github.com/jkawamoto/vsop"
 repository = "https://github.com/jkawamoto/vsop"
 license = "MIT"
 keywords = ["ctranslate2", "translation", "llm"]
@@ -37,3 +38,34 @@ ruy = ["ct2rs/ruy"]
 accelerate = ["ct2rs/accelerate"]
 cuda = ["ct2rs/cuda"]
 cudnn = ["ct2rs/cudnn"]
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.14.1"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["homebrew"]
+# A GitHub repo to push Homebrew formulas to
+tap = "jkawamoto/homebrew-tap"
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
+
+[workspace.metadata.dist.dependencies.homebrew]
+cmake = "*"
+protobuf = "*"
+
+[workspace.metadata.dist.dependencies.apt]
+cmake = "*"
+protobuf-compiler = "*"
+libprotobuf-dev = "*"
