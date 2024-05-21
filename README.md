@@ -1,4 +1,6 @@
 # vsop
+[![Build](https://github.com/jkawamoto/vsop/actions/workflows/build.yml/badge.svg)](https://github.com/jkawamoto/vsop/actions/workflows/build.yml)
+
 Command line translation tool using [CTranslate2](https://github.com/OpenNMT/CTranslate2).
 
 This tool employs a client-server approach to avoid loading the model every time a text needs to be translated.
@@ -19,6 +21,14 @@ vsop
 ```
 
 After saving and closing the editor, the text is translated.
+
+## Installation
+
+```bash
+brew install jkawamoto/tap/vsop
+````
+
+Prebuilt binaries are also available on the [release page](https://github.com/jkawamoto/vsop/releases).
 
 ## Compilation
 This tool works on Linux and Mac, using several backend libraries such as
