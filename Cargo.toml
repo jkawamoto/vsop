@@ -12,16 +12,16 @@ categories = ["command-line-utilities", "text-processing"]
 
 
 [dependencies]
-anyhow = "1.0.86"
-ct2rs =  "0.8.2"
-tempfile = "3.10.1"
-clap = { version = "4.5.4", features = ["derive", "cargo"] }
+anyhow = "1.0.104"
+ct2rs =  "0.8.5"
+tempfile = "3.27.0"
+clap = { version = "4.6.7", features = ["derive", "cargo"] }
 directories = "5.0.1"
-spinners = "4.1.1"
+spinners = "4.2.0"
 tonic = "0.11.0"
-tokio = { version = "1.38.2", features = ["macros", "rt-multi-thread", "net", "signal"] }
+tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 prost = "0.12.6"
-tokio-stream = { version = "0.1.15", features = ["net"] }
+tokio-stream = { version = "0.1.19", features = ["net"] }
 tower = "0.4.13"
 hf-hub = "0.3.2"
 

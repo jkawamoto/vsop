@@ -57,7 +57,7 @@ impl Client {
 
 pub struct Server {
     inner: Translator<AutoTokenizer>,
-    options: TranslationOptions<String>,
+    options: TranslationOptions<String, String>,
 }
 
 impl Server {
